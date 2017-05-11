@@ -21,6 +21,7 @@
   {% endblocktrans %}
   </p>
 
+  <p id="u2f-status"></p>
   <form method="post" id="u2f-form">
       {% csrf_token %}
       {{ forms.u2f.as_p }}
