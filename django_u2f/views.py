@@ -18,6 +18,7 @@ from django.shortcuts import resolve_url, get_object_or_404
 from django.contrib.sites.shortcuts import get_current_site
 from django.utils.functional import cached_property
 from django.utils.translation import ugettext as _
+import time
 
 import qrcode
 from qrcode.image.svg import SvgPathImage
@@ -159,7 +160,10 @@ class VerifySecondFactorView(OriginMixin, TemplateView):
             return None
 
     def dispatch(self, request, *args, **kwargs):
-        self.user = self.get_user()
+        if request.user.is_authenticated:
+            self.user = request.user
+        else:
+            self.user = self.get_user()
         if self.user is None:
             return HttpResponseRedirect(reverse('u2f:login'))
         return super(VerifySecondFactorView, self).dispatch(request, *args, **kwargs)
@@ -213,10 +217,19 @@ class VerifySecondFactorView(OriginMixin, TemplateView):
         if not form.validate_second_factor():
             return self.form_invalid(forms)
 
-        del self.request.session['u2f_pre_verify_user_pk']
-        del self.request.session['u2f_pre_verify_user_backend']
+        self.request.session.pop('u2f_pre_verify_user_pk', None)
+        self.request.session.pop('u2f_pre_verify_user_backend', None)
 
-        auth.login(self.request, self.user)
+        if not self.request.user.is_authenticated:
+            auth.login(self.request, self.user)
+
+        self.request.session.pop('u2f_verified', None)
+        self.request.session.pop('u2f_verified_exp', None)
+        if self.request.session.pop('u2f_verify_this_exp', 0) > int(time.time()):
+            self.request.session['u2f_verified'] = self.request.session.pop('u2f_verify_this', None)
+            self.request.session['u2f_verified_exp'] = int(time.time()) + 5 #seconds
+        else:
+            self.request.session.pop('u2f_verify_this', None)
 
         redirect_to = self.request.POST.get(auth.REDIRECT_FIELD_NAME,
                                             self.request.GET.get(auth.REDIRECT_FIELD_NAME, ''))
