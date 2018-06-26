@@ -4,6 +4,7 @@ import os
 
 from setuptools import setup, find_packages
 
+
 def read(fname, encoding='utf-8'):
     path = os.path.join(os.path.dirname(__file__), fname)
     with io.open(path, encoding=encoding) as f:
@@ -12,7 +13,7 @@ def read(fname, encoding='utf-8'):
 
 setup(
     name='django-u2f',
-    version='0.1.0',
+    version='0.3.1.dev0',
     description="FIDO U2F security token support for Django",
     long_description=read('README.rst'),
     url='https://github.com/gavinwahl/django-u2f',
@@ -23,7 +24,7 @@ setup(
     install_requires=[
         'python-u2flib-server>=5.0.0',
         'django-argonauts',
-        'django>=1.8,<1.11',
+        'django>=1.11',
         'qrcode',
         'six',
     ],
